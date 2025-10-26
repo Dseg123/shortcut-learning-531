@@ -18,11 +18,17 @@ from shortcut_learning.configs import (
     TrainingConfig,
 )
 from shortcut_learning.methods.base_approach import BaseApproach
+# from shortcut_learning.methods.collection import collect_graph_based_training_data
+from shortcut_learning.methods.collection_v2 import collect_training_data_v2
 from shortcut_learning.methods.policies.base import Policy
+# from shortcut_learning.methods.policies.multi_rl_ppo import MultiRLPolicy
+from shortcut_learning.methods.policies.multi_rl_ppo_v2 import MultiRLPolicyV2
 from shortcut_learning.methods.policies.rl_ppo import RLPolicy
 from shortcut_learning.methods.pure_rl_approach import PureRLApproach
 from shortcut_learning.methods.random_approach import RandomApproach
-from shortcut_learning.methods.training_data import TrainingData
+# from shortcut_learning.methods.slap_approach import SLAPApproach
+from shortcut_learning.methods.slap_approach_v2 import SLAPApproachV2
+from shortcut_learning.methods.training_data import ShortcutTrainingData, TrainingData
 from shortcut_learning.problems.base_tamp import ImprovisationalTAMPSystem
 
 ObsType = TypeVar("ObsType")
@@ -49,6 +55,12 @@ def initialize_policy(
     if policy_config.policy_type == "rl_ppo":
         return RLPolicy(seed, policy_config)
 
+    # if policy_config.policy_type == "multi_rl_ppo":
+    #     return MultiRLPolicy(seed, policy_config)
+
+    if policy_config.policy_type == "multi_rl_ppo_v2":
+        return MultiRLPolicyV2(seed, policy_config)
+
     raise NotImplementedError
 
 
@@ -56,38 +68,52 @@ def initialize_approach(
     system: ImprovisationalTAMPSystem[ObsType, ActType],
     approach_config: ApproachConfig,
     policy_config: PolicyConfig,
-    seed: int = 42,
 ) -> BaseApproach[ObsType, ActType]:
     """Initialize an approach."""
+    policy: Policy[ObsType, ActType] = initialize_policy(policy_config)
     if approach_config.approach_type == "random":
-        return RandomApproach(system, seed, approach_config.approach_name)
-
+        return RandomApproach(system, approach_config)
     if approach_config.approach_type == "pure_rl":
-        policy: Policy[ObsType, ActType] = initialize_policy(policy_config)
-        return PureRLApproach(system, seed, approach_config.approach_name, policy)
-
+        return PureRLApproach(system, approach_config, policy)
+    # if approach_config.approach_type == "slap":
+    #     return SLAPApproach(system, approach_config, policy)
+    if approach_config.approach_type == "slap_v2":
+        return SLAPApproachV2(system, approach_config, policy)
     raise NotImplementedError
 
 
 def collect_approach(  # pylint: disable=useless-return
     approach: BaseApproach[ObsType, ActType],
     collect_config: CollectionConfig,
-) -> TrainingData | None:
+) -> TrainingData | ShortcutTrainingData | None:
     """Collect data for an approach."""
     # Coming soon:
-    # return collect_training_data(collect_config, ...)
-    del approach, collect_config
-    return None
+    if collect_config.skip_collect or not isinstance(approach, SLAPApproachV2):
+        return None
+
+
+    # V2 requires planning graph to be built first
+    if not approach.graph_built:
+        obs, info = approach.system.reset()
+        approach.build_planning_graph(obs, info)
+
+    train_data = collect_training_data_v2(approach, collect_config)
+    return train_data
 
 
 def train_approach(
     approach: BaseApproach[ObsType, ActType],
     train_config: TrainingConfig,
-    train_data: TrainingData | None,
+    train_data: TrainingData | ShortcutTrainingData | None,
 ) -> BaseApproach[ObsType, ActType]:
     """Train an approach."""
 
-    approach.train(train_data, train_config)
+    # V2 approaches use a different train signature
+    if isinstance(approach, SLAPApproachV2):
+        if train_data is not None:
+            approach.train(train_data, train_config)
+    else:
+        approach.train(train_data, train_config)
 
     return approach
 
@@ -189,7 +215,10 @@ def run_evaluation_episode(
         hasattr(approach, "reset")
         and "select_random_goal" in inspect.signature(approach.reset).parameters
     ):
-        step_result = approach.reset(obs, info, select_random_goal=eval_config.select_random_goal)  # type: ignore[call-arg]  # pylint: disable=line-too-long
+        # type: ignore[call-arg]  # pylint: disable=line-too-long
+        step_result = approach.reset(
+            obs, info, select_random_goal=eval_config.select_random_goal
+        )
     else:
         step_result = approach.reset(obs, info)
 
