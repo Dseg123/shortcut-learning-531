@@ -1,12 +1,13 @@
 #!/bin/bash
 #SBATCH --job-name=slap_v2_experiment  # Job name
-#SBATCH --time=4:00:00  # Maximum runtime (hh:mm:ss) - longer for training
-#SBATCH --partition=pli
 #SBATCH --nodes=1  # Number of nodes
 #SBATCH --ntasks=1  # Number of tasks
-#SBATCH --cpus-per-task=8  # More CPU cores for parallel training
-#SBATCH --mem=64G  # More memory for larger graphs and training
+#SBATCH --time=4:00:00  # Maximum runtime (hh:mm:ss) - longer for training
 #SBATCH --gres=gpu:1  # Request one GPU
+#SBATCH --partition=pli
+#SBATCH --account=squaremuon
+#SBATCH --mem=64G  # More memory for larger graphs and training
+#SBATCH --cpus-per-task=8  # More CPU cores for parallel training
 
 
 BASE_PATH=${1:-/home/jz4267/shortcut-learning-531}
