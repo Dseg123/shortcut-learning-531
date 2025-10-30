@@ -93,7 +93,8 @@ class PlanningGraph:
     def find_shortest_path(
         self, init_atoms: set[GroundAtom], goal: set[GroundAtom]
     ) -> list[PlanningGraphEdge]:
-        """Find shortest path from initial node to goal node using standard Dijkstra."""
+        """Find shortest path from initial node to goal node using standard
+        Dijkstra."""
         if not self.nodes:
             return []
 
@@ -103,9 +104,9 @@ class PlanningGraph:
 
         # Standard Dijkstra's algorithm
         distances: dict[PlanningGraphNode, float] = {initial_node: 0.0}
-        previous: dict[PlanningGraphNode, tuple[PlanningGraphNode, PlanningGraphEdge] | None] = {
-            initial_node: None
-        }
+        previous: dict[
+            PlanningGraphNode, tuple[PlanningGraphNode, PlanningGraphEdge] | None
+        ] = {initial_node: None}
 
         # Priority queue for Dijkstra's algorithm
         counter = itertools.count()
@@ -156,8 +157,7 @@ class PlanningGraph:
         total_cost = distances[best_goal]
         print(f"Shortest path's cost: {total_cost}")
         path_details = [
-            f"{edge.source.id}->{edge.target.id} [cost: {edge.cost}]"
-            for edge in path
+            f"{edge.source.id}->{edge.target.id} [cost: {edge.cost}]" for edge in path
         ]
         print(f"Path details: {' -> '.join(path_details)}")
 

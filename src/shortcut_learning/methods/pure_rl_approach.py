@@ -30,7 +30,9 @@ class PureRLApproach(BaseApproach[ObsType, ActType]):
         self.policy = policy
         self.policy.initialize(system.env)
 
-    def reset(self, obs: ObsType, info: dict[str, Any], select_random_goal: bool=False) -> ApproachStepResult[ActType]:
+    def reset(
+        self, obs: ObsType, info: dict[str, Any], select_random_goal: bool = False
+    ) -> ApproachStepResult[ActType]:
         """Reset approach with initial observation."""
         return self.step(obs, 0.0, False, False, info)
 

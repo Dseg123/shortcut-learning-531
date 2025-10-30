@@ -26,7 +26,7 @@ dependencies = [
    "types-tqdm",
    "wandb",
    "cachetools",
-   "pybullet==3.2.7",
+   "pybullet",
    "pybullet_helpers@git+https://github.com/tomsilver/pybullet-helpers.git",
    "tomsutils@git+https://github.com/tomsilver/toms-utils.git",
    "tomsgeoms2d@git+https://github.com/tomsilver/toms-geoms-2d.git",

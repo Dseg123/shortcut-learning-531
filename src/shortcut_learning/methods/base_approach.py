@@ -49,7 +49,9 @@ class BaseApproach(Generic[ObsType, ActType], ABC):
         self._training_mode = value
 
     @abstractmethod
-    def reset(self, obs: ObsType, info: dict[str, Any], select_random_goal: bool=False) -> ApproachStepResult[ActType]:
+    def reset(
+        self, obs: ObsType, info: dict[str, Any], select_random_goal: bool = False
+    ) -> ApproachStepResult[ActType]:
         """Reset approach with initial observation."""
 
     @abstractmethod

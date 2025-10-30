@@ -9,10 +9,7 @@ from shortcut_learning.configs import (
     PolicyConfig,
     TrainingConfig,
 )
-from shortcut_learning.methods.pipeline import (
-    pipeline_from_configs,
-    Metrics
-)
+from shortcut_learning.methods.pipeline import Metrics, pipeline_from_configs
 from shortcut_learning.problems.obstacle2d.system import BaseObstacle2DTAMPSystem
 
 

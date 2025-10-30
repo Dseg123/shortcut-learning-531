@@ -3,8 +3,10 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
+
 from shortcut_learning.methods.graph_utils import PlanningGraphNode
 from shortcut_learning.methods.heuristic_models.base_model import HeuristicModel
+
 
 class MLPModel(HeuristicModel):
     """An MLP model for predicting path distance."""
@@ -14,16 +16,18 @@ class MLPModel(HeuristicModel):
         self._hyper_params = hyper_params
 
     @abstractmethod
-    def get_distance(self, shortcut_pair: tuple[PlanningGraphNode, PlanningGraphNode]) -> float:
-        """ Given a shortcut pair, return the predicted path distance between the two nodes."""
+    def get_distance(
+        self, shortcut_pair: tuple[PlanningGraphNode, PlanningGraphNode]
+    ) -> float:
+        """Given a shortcut pair, return the predicted path distance between
+        the two nodes."""
 
     @abstractmethod
     def train(
         self,
         train_data: list[tuple[PlanningGraphNode, PlanningGraphNode, float]] | None,
     ) -> None:
-        """Train the policy if needed.
-        """
+        """Train the policy if needed."""
 
     @abstractmethod
     def save(self, path: str) -> None:

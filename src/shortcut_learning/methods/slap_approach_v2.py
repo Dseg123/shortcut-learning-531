@@ -61,7 +61,9 @@ class SLAPApproachV2(BaseApproach[ObsType, ActType]):
         self.costs_computed = False  # Track if we've computed costs for the graph
 
         # Shortcuts (populated during training)
-        self.trained_shortcuts: list[tuple[int, int]] = []  # List of (source_id, target_id)
+        self.trained_shortcuts: list[tuple[int, int]] = (
+            []
+        )  # List of (source_id, target_id)
         self.shortcuts_added = False
 
         # Current execution state
@@ -160,7 +162,8 @@ class SLAPApproachV2(BaseApproach[ObsType, ActType]):
     def _find_applicable_operators(
         self, current_atoms: set[GroundAtom], objects: set[Object]
     ) -> list[GroundOperator]:
-        """Find all ground operators that are applicable in the current state."""
+        """Find all ground operators that are applicable in the current
+        state."""
         applicable_ops = []
         domain_operators = self.domain.operators
 
@@ -218,40 +221,57 @@ class SLAPApproachV2(BaseApproach[ObsType, ActType]):
 
         if not comprehensive:
             # Simple graph from current state (stop at goal)
-            return self._build_planning_graph_from_state(objects, atoms, stop_at_goal=True)
+            return self._build_planning_graph_from_state(
+                objects, atoms, stop_at_goal=True
+            )
 
         # Build comprehensive graph by sampling multiple initial states
         print("Building comprehensive planning graph for V2...")
 
         # Build initial graph from current state (don't stop at goal)
-        graph = self._build_planning_graph_from_state(objects, atoms, stop_at_goal=False)
+        graph = self._build_planning_graph_from_state(
+            objects, atoms, stop_at_goal=False
+        )
 
         # Try to expand graph by starting from other initial states
         num_samples = 5  # Sample a few different initial states
         for i in range(num_samples):
-            print(f"  Sampling initial state {i+1}/{num_samples} for graph expansion...")
+            print(
+                f"  Sampling initial state {i+1}/{num_samples} for graph expansion..."
+            )
             sample_obs, sample_info = self.system.reset()
-            sample_objects, sample_atoms, _ = self.system.perceiver.reset(sample_obs, sample_info)
+            sample_objects, sample_atoms, _ = self.system.perceiver.reset(
+                sample_obs, sample_info
+            )
 
             # Check if this state is already in the graph
             if frozenset(sample_atoms) in graph.node_map:
-                print(f"    State already in graph (node {graph.node_map[frozenset(sample_atoms)].id})")
+                print(
+                    f"    State already in graph (node {graph.node_map[frozenset(sample_atoms)].id})"
+                )
                 continue
 
             # Build a subgraph from this state (don't stop at goal)
-            subgraph = self._build_planning_graph_from_state(sample_objects, sample_atoms, stop_at_goal=False)
+            subgraph = self._build_planning_graph_from_state(
+                sample_objects, sample_atoms, stop_at_goal=False
+            )
 
             # Merge subgraph into main graph
             self._merge_graphs(graph, subgraph)
-            print(f"    Merged: graph now has {len(graph.nodes)} nodes, {len(graph.edges)} edges")
+            print(
+                f"    Merged: graph now has {len(graph.nodes)} nodes, {len(graph.edges)} edges"
+            )
 
-        print(f"Final comprehensive graph: {len(graph.nodes)} nodes, {len(graph.edges)} edges")
+        print(
+            f"Final comprehensive graph: {len(graph.nodes)} nodes, {len(graph.edges)} edges"
+        )
         return graph
 
     def _merge_graphs(self, main_graph: PlanningGraph, subgraph: PlanningGraph) -> None:
         """Merge a subgraph into the main graph.
 
-        Adds nodes and edges from subgraph that don't already exist in main_graph.
+        Adds nodes and edges from subgraph that don't already exist in
+        main_graph.
         """
         # Map from old node to new node for subgraph nodes
         node_mapping = {}
@@ -279,13 +299,21 @@ class SLAPApproachV2(BaseApproach[ObsType, ActType]):
             # Check if edge already exists
             existing_edges = main_graph.node_to_outgoing_edges.get(source, [])
             edge_exists = any(
-                e.target == target and e.operator == edge.operator and e.is_shortcut == edge.is_shortcut
+                e.target == target
+                and e.operator == edge.operator
+                and e.is_shortcut == edge.is_shortcut
                 for e in existing_edges
             )
 
             if not edge_exists:
                 # Preserve the cost from the original edge
-                main_graph.add_edge(source, target, edge.operator, cost=edge.cost, is_shortcut=edge.is_shortcut)
+                main_graph.add_edge(
+                    source,
+                    target,
+                    edge.operator,
+                    cost=edge.cost,
+                    is_shortcut=edge.is_shortcut,
+                )
                 edges_added += 1
 
         print(f"    Merge added {nodes_added} nodes and {edges_added} edges")
@@ -330,7 +358,9 @@ class SLAPApproachV2(BaseApproach[ObsType, ActType]):
     # V2-SPECIFIC METHODS
     # =========================================================================
 
-    def build_planning_graph(self, obs: ObsType, info: dict[str, Any], comprehensive: bool = True) -> None:
+    def build_planning_graph(
+        self, obs: ObsType, info: dict[str, Any], comprehensive: bool = True
+    ) -> None:
         """Build planning graph (call this once before collection/training).
 
         Separate from reset() to allow building the graph without planning.
@@ -343,7 +373,9 @@ class SLAPApproachV2(BaseApproach[ObsType, ActType]):
         """
         if not self.graph_built:
             print("Building planning graph (first time)...")
-            self.planning_graph = self._create_planning_graph(obs, info, comprehensive=comprehensive)
+            self.planning_graph = self._create_planning_graph(
+                obs, info, comprehensive=comprehensive
+            )
             self.graph_built = True
             print(f"Planning graph built with {len(self.planning_graph.nodes)} nodes")
 
@@ -387,17 +419,23 @@ class SLAPApproachV2(BaseApproach[ObsType, ActType]):
                 missing.append("goal state")
 
             print(f"Expanding planning graph: {' and '.join(missing)} not found")
-            print(f"  Graph before: {len(self.planning_graph.nodes)} nodes, {len(self.planning_graph.edges)} edges")
+            print(
+                f"  Graph before: {len(self.planning_graph.nodes)} nodes, {len(self.planning_graph.edges)} edges"
+            )
 
             # Build a subgraph from this initial state
             # IMPORTANT: Don't stop at goal - explore fully to ensure connectivity
             objects, atoms_from_perceiver, _ = self.system.perceiver.reset(obs, info)
-            subgraph = self._build_planning_graph_from_state(objects, atoms_from_perceiver, stop_at_goal=False)
+            subgraph = self._build_planning_graph_from_state(
+                objects, atoms_from_perceiver, stop_at_goal=False
+            )
 
             # Merge the subgraph
             self._merge_graphs(self.planning_graph, subgraph)
 
-            print(f"  Graph after: {len(self.planning_graph.nodes)} nodes, {len(self.planning_graph.edges)} edges")
+            print(
+                f"  Graph after: {len(self.planning_graph.nodes)} nodes, {len(self.planning_graph.edges)} edges"
+            )
 
             # Re-add shortcuts to any newly added edges if we have trained shortcuts
             if self.shortcuts_added and self.trained_shortcuts:
@@ -415,11 +453,17 @@ class SLAPApproachV2(BaseApproach[ObsType, ActType]):
 
         # Find shortest path
         print(f"Finding path from {atoms_frozen} to {goal_atoms_frozen}")
-        print(f"  Initial node in graph: {atoms_frozen in self.planning_graph.node_map}")
-        print(f"  Goal node in graph: {goal_atoms_frozen in self.planning_graph.node_map}")
+        print(
+            f"  Initial node in graph: {atoms_frozen in self.planning_graph.node_map}"
+        )
+        print(
+            f"  Goal node in graph: {goal_atoms_frozen in self.planning_graph.node_map}"
+        )
 
         try:
-            self._current_path = self.planning_graph.find_shortest_path(atoms, goal_atoms)
+            self._current_path = self.planning_graph.find_shortest_path(
+                atoms, goal_atoms
+            )
         except AssertionError as e:
             # Print diagnostic info
             print(f"\nERROR: {e}")
@@ -428,7 +472,9 @@ class SLAPApproachV2(BaseApproach[ObsType, ActType]):
             print(f"\nGraph structure:")
             for node in self.planning_graph.nodes:
                 out_edges = self.planning_graph.node_to_outgoing_edges.get(node, [])
-                print(f"  Node {node.id}: {len(node.atoms)} atoms, {len(out_edges)} outgoing edges")
+                print(
+                    f"  Node {node.id}: {len(node.atoms)} atoms, {len(out_edges)} outgoing edges"
+                )
             raise
 
         if not self._current_path:
@@ -452,7 +498,11 @@ class SLAPApproachV2(BaseApproach[ObsType, ActType]):
         assert self.planning_graph is not None
 
         # Find all edges that need costs
-        edges_to_compute = [e for e in self.planning_graph.edges if e.cost == float('inf') and not e.is_shortcut]
+        edges_to_compute = [
+            e
+            for e in self.planning_graph.edges
+            if e.cost == float("inf") and not e.is_shortcut
+        ]
 
         if not edges_to_compute:
             print("  No new edges need cost computation")
@@ -467,17 +517,22 @@ class SLAPApproachV2(BaseApproach[ObsType, ActType]):
             cost = self._measure_regular_edge_cost(raw_env, edge)
             edge.cost = cost
 
-            if cost < float('inf'):
-                print(f"    Edge {edge.source.id}→{edge.target.id} ({edge.operator.name if edge.operator else 'unknown'}): {cost:.1f} steps")
+            if cost < float("inf"):
+                print(
+                    f"    Edge {edge.source.id}→{edge.target.id} ({edge.operator.name if edge.operator else 'unknown'}): {cost:.1f} steps"
+                )
             else:
-                print(f"    Edge {edge.source.id}→{edge.target.id} ({edge.operator.name if edge.operator else 'unknown'}): FAILED")
+                print(
+                    f"    Edge {edge.source.id}→{edge.target.id} ({edge.operator.name if edge.operator else 'unknown'}): FAILED"
+                )
 
     def _measure_regular_edge_cost(
         self,
         env: gym.Env,
         edge: PlanningGraphEdge,
     ) -> float:
-        """Measure cost of a regular (non-shortcut) edge by executing its operator.
+        """Measure cost of a regular (non-shortcut) edge by executing its
+        operator.
 
         Returns number of steps, or inf if failed.
         """
@@ -485,14 +540,16 @@ class SLAPApproachV2(BaseApproach[ObsType, ActType]):
         # If the source node has stored states (from collection), use one
         # Otherwise, we need to find/create a matching state
 
-        source_states = edge.source.states if hasattr(edge.source, 'states') else []
+        source_states = edge.source.states if hasattr(edge.source, "states") else []
 
         if not source_states:
             # No stored states - we need to sample or search for a matching state
             # Try to find one by resetting the environment multiple times
             for _ in range(10):  # Try up to 10 times
                 sample_obs, sample_info = self.system.reset()
-                _, sample_atoms, _ = self.system.perceiver.reset(sample_obs, sample_info)
+                _, sample_atoms, _ = self.system.perceiver.reset(
+                    sample_obs, sample_info
+                )
 
                 if frozenset(sample_atoms) == frozenset(edge.source.atoms):
                     # Found a matching state!
@@ -501,7 +558,9 @@ class SLAPApproachV2(BaseApproach[ObsType, ActType]):
 
             if not source_states:
                 # Couldn't find a matching state, use default
-                print(f"      Warning: No state found for node {edge.source.id}, using default cost")
+                print(
+                    f"      Warning: No state found for node {edge.source.id}, using default cost"
+                )
                 return 1.0
 
         # Use the first available state
@@ -522,7 +581,7 @@ class SLAPApproachV2(BaseApproach[ObsType, ActType]):
         for step in range(self._max_skill_steps):
             action = skill.get_action(obs)
             if action is None:
-                return float('inf')
+                return float("inf")
 
             obs, _, term, trunc, _ = env.step(action)
             atoms = self.system.perceiver.step(obs)
@@ -532,16 +591,16 @@ class SLAPApproachV2(BaseApproach[ObsType, ActType]):
                 return float(step + 1)
 
             if term or trunc:
-                return float('inf')
+                return float("inf")
 
-        return float('inf')  # Timeout
+        return float("inf")  # Timeout
 
     def _try_add_shortcuts_to_new_nodes(self) -> None:
         """Try to add trained shortcuts to newly added nodes in the graph.
 
         When we expand the graph with new nodes, we may be able to add
-        shortcuts between existing nodes with trained shortcuts and new nodes,
-        or between pairs of new nodes.
+        shortcuts between existing nodes with trained shortcuts and new
+        nodes, or between pairs of new nodes.
         """
         if not self.trained_shortcuts:
             return
@@ -551,16 +610,24 @@ class SLAPApproachV2(BaseApproach[ObsType, ActType]):
 
         for shortcut_id, (source_id, target_id) in enumerate(self.trained_shortcuts):
             # Find source and target nodes by id
-            source_node = next((n for n in self.planning_graph.nodes if n.id == source_id), None)
-            target_node = next((n for n in self.planning_graph.nodes if n.id == target_id), None)
+            source_node = next(
+                (n for n in self.planning_graph.nodes if n.id == source_id), None
+            )
+            target_node = next(
+                (n for n in self.planning_graph.nodes if n.id == target_id), None
+            )
 
             if not source_node or not target_node:
                 continue
 
             # Check if shortcut edge already exists
-            existing_edges = self.planning_graph.node_to_outgoing_edges.get(source_node, [])
+            existing_edges = self.planning_graph.node_to_outgoing_edges.get(
+                source_node, []
+            )
             shortcut_exists = any(
-                e.target == target_node and e.is_shortcut and e.shortcut_id == shortcut_id
+                e.target == target_node
+                and e.is_shortcut
+                and e.shortcut_id == shortcut_id
                 for e in existing_edges
             )
 
@@ -591,9 +658,9 @@ class SLAPApproachV2(BaseApproach[ObsType, ActType]):
         2. Add k shortcut edges to planning graph
         3. Compute costs by sampling from training states
         """
-        print("\n" + "="*60)
+        print("\n" + "=" * 60)
         print("TRAINING V2")
-        print("="*60)
+        print("=" * 60)
 
         assert self.planning_graph is not None, "Must build planning graph first"
         assert not self.shortcuts_added, "Shortcuts already added!"
@@ -620,7 +687,9 @@ class SLAPApproachV2(BaseApproach[ObsType, ActType]):
 
         # Add shortcut edges to graph
         print(f"\nAdding {k} shortcut edges to planning graph...")
-        for shortcut_id, (source_node, target_node) in enumerate(training_data.shortcuts):
+        for shortcut_id, (source_node, target_node) in enumerate(
+            training_data.shortcuts
+        ):
             edge = self.planning_graph.add_edge(
                 source_node,
                 target_node,
@@ -628,7 +697,9 @@ class SLAPApproachV2(BaseApproach[ObsType, ActType]):
                 is_shortcut=True,
             )
             edge.shortcut_id = shortcut_id
-            print(f"  Added shortcut {shortcut_id}: {source_node.id} → {target_node.id}")
+            print(
+                f"  Added shortcut {shortcut_id}: {source_node.id} → {target_node.id}"
+            )
 
         self.shortcuts_added = True
 
@@ -636,9 +707,9 @@ class SLAPApproachV2(BaseApproach[ObsType, ActType]):
         print(f"\nComputing costs for {k} shortcuts...")
         self._compute_shortcut_costs(training_data)
 
-        print("\n" + "="*60)
+        print("\n" + "=" * 60)
         print("TRAINING COMPLETE")
-        print("="*60 + "\n")
+        print("=" * 60 + "\n")
 
     def _train_policy_v2(
         self,
@@ -647,20 +718,21 @@ class SLAPApproachV2(BaseApproach[ObsType, ActType]):
     ) -> None:
         """Train the multi-policy on all shortcuts.
 
-        MultiRLPolicyV2 handles creating wrappers per shortcut internally.
-        We just need to provide the base environment and training config.
+        MultiRLPolicyV2 handles creating wrappers per shortcut
+        internally. We just need to provide the base environment and
+        training config.
         """
         # Create base training environment
         raw_env = self._create_planning_env()
 
         # Attach perceiver to environment for multi_rl_ppo_v2
         # The policy needs it to create SLAP wrappers
-        if not hasattr(raw_env, 'perceiver'):
+        if not hasattr(raw_env, "perceiver"):
             raw_env.perceiver = self.system.perceiver
 
         # Train the multi-policy
         # MultiRLPolicyV2 will create one policy per shortcut
-        if hasattr(self.policy, 'train'):
+        if hasattr(self.policy, "train"):
             print(f"Training multi-policy on {len(training_data)} shortcuts...")
             self.policy.train(
                 env=raw_env,
@@ -675,18 +747,25 @@ class SLAPApproachV2(BaseApproach[ObsType, ActType]):
     ) -> None:
         """Compute costs for shortcuts by sampling from training states.
 
-        For each shortcut, sample num_samples states from source_node.states,
-        execute the policy, measure steps, and average.
+        For each shortcut, sample num_samples states from
+        source_node.states, execute the policy, measure steps, and
+        average.
         """
         print("Computing shortcut costs by sampling...")
 
         raw_env = self._create_planning_env()
 
-        for shortcut_id, (source_node, target_node) in enumerate(training_data.shortcuts):
+        for shortcut_id, (source_node, target_node) in enumerate(
+            training_data.shortcuts
+        ):
             # Find the edge
             edge = None
             for e in self.planning_graph.edges:
-                if e.source == source_node and e.target == target_node and e.is_shortcut:
+                if (
+                    e.source == source_node
+                    and e.target == target_node
+                    and e.is_shortcut
+                ):
                     edge = e
                     break
 
@@ -698,13 +777,15 @@ class SLAPApproachV2(BaseApproach[ObsType, ActType]):
             source_states = source_node.states
             if not source_states:
                 print(f"  Warning: No states for node {source_node.id}")
-                edge.cost = float('inf')
+                edge.cost = float("inf")
                 continue
 
             # Sample up to num_samples states
             sample_size = min(num_samples, len(source_states))
             rng = np.random.default_rng(42)
-            sampled_indices = rng.choice(len(source_states), size=sample_size, replace=False)
+            sampled_indices = rng.choice(
+                len(source_states), size=sample_size, replace=False
+            )
             sampled_states = [source_states[i] for i in sampled_indices]
 
             costs = []
@@ -712,17 +793,21 @@ class SLAPApproachV2(BaseApproach[ObsType, ActType]):
                 cost = self._measure_shortcut_cost(
                     raw_env, state, source_node, target_node, shortcut_id
                 )
-                if cost < float('inf'):
+                if cost < float("inf"):
                     costs.append(cost)
 
             # Average cost
             if costs:
                 avg_cost = np.mean(costs)
                 edge.cost = avg_cost
-                print(f"  Shortcut {shortcut_id} ({source_node.id}→{target_node.id}): {avg_cost:.1f} steps (from {len(costs)} samples)")
+                print(
+                    f"  Shortcut {shortcut_id} ({source_node.id}→{target_node.id}): {avg_cost:.1f} steps (from {len(costs)} samples)"
+                )
             else:
-                edge.cost = float('inf')
-                print(f"  Shortcut {shortcut_id} ({source_node.id}→{target_node.id}): FAILED (all samples)")
+                edge.cost = float("inf")
+                print(
+                    f"  Shortcut {shortcut_id} ({source_node.id}→{target_node.id}): FAILED (all samples)"
+                )
 
     def _measure_shortcut_cost(
         self,
@@ -760,7 +845,7 @@ class SLAPApproachV2(BaseApproach[ObsType, ActType]):
         for step in range(self._max_skill_steps):
             action = self.policy.get_action(obs)
             if action is None:
-                return float('inf')
+                return float("inf")
 
             obs, _, term, trunc, _ = env.step(action)
             atoms = self.system.perceiver.step(obs)
@@ -770,9 +855,9 @@ class SLAPApproachV2(BaseApproach[ObsType, ActType]):
                 return float(step + 1)
 
             if term or trunc:
-                return float('inf')
+                return float("inf")
 
-        return float('inf')  # Timeout
+        return float("inf")  # Timeout
 
     def step(
         self,

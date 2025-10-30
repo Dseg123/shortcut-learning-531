@@ -18,14 +18,17 @@ from shortcut_learning.configs import (
     TrainingConfig,
 )
 from shortcut_learning.methods.base_approach import BaseApproach
+
 # from shortcut_learning.methods.collection import collect_graph_based_training_data
 from shortcut_learning.methods.collection_v2 import collect_training_data_v2
 from shortcut_learning.methods.policies.base import Policy
+
 # from shortcut_learning.methods.policies.multi_rl_ppo import MultiRLPolicy
 from shortcut_learning.methods.policies.multi_rl_ppo_v2 import MultiRLPolicyV2
 from shortcut_learning.methods.policies.rl_ppo import RLPolicy
 from shortcut_learning.methods.pure_rl_approach import PureRLApproach
 from shortcut_learning.methods.random_approach import RandomApproach
+
 # from shortcut_learning.methods.slap_approach import SLAPApproach
 from shortcut_learning.methods.slap_approach_v2 import SLAPApproachV2
 from shortcut_learning.methods.training_data import ShortcutTrainingData, TrainingData
@@ -90,7 +93,6 @@ def collect_approach(  # pylint: disable=useless-return
     # Coming soon:
     if collect_config.skip_collect or not isinstance(approach, SLAPApproachV2):
         return None
-
 
     # V2 requires planning graph to be built first
     if not approach.graph_built:

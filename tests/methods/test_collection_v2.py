@@ -182,14 +182,16 @@ def test_collect_training_data_v2_full_pipeline(system_cls):
 @pytest.mark.parametrize(
     "states_per_node,perturbation_steps,use_multi_start",
     [
-        (10, 1, False),   # Single-start baseline
-        (10, 1, True),    # Multi-start with same params
-        (50, 2, False),   # Single-start at target scale
-        (50, 2, True),    # Multi-start at target scale
+        (10, 1, False),  # Single-start baseline
+        (10, 1, True),  # Multi-start with same params
+        (50, 2, False),  # Single-start at target scale
+        (50, 2, True),  # Multi-start at target scale
     ],
 )
 @pytest.mark.parametrize("system_cls", [BaseObstacle2DTAMPSystem])
-def test_states_per_node_ablation(system_cls, states_per_node, perturbation_steps, use_multi_start):
+def test_states_per_node_ablation(
+    system_cls, states_per_node, perturbation_steps, use_multi_start
+):
     """Ablation study: Test how many states we can actually collect per node.
 
     This test helps us understand the practical limits of state collection and
@@ -216,7 +218,9 @@ def test_states_per_node_ablation(system_cls, states_per_node, perturbation_step
     num_nodes = len(approach.planning_graph.nodes)
     strategy = "MULTI-START" if use_multi_start else "SINGLE-START"
     print(f"\n{'='*70}")
-    print(f"ABLATION: {strategy}, states_per_node={states_per_node}, perturbation_steps={perturbation_steps}")
+    print(
+        f"ABLATION: {strategy}, states_per_node={states_per_node}, perturbation_steps={perturbation_steps}"
+    )
     print(f"{'='*70}")
 
     # Collect states
@@ -230,7 +234,7 @@ def test_states_per_node_ablation(system_cls, states_per_node, perturbation_step
     # Analyze results
     states_by_node = {}
     total_states = 0
-    min_states = float('inf')
+    min_states = float("inf")
     max_states = 0
 
     for node in approach.planning_graph.nodes:
@@ -253,15 +257,18 @@ def test_states_per_node_ablation(system_cls, states_per_node, perturbation_step
     print(f"\nPer-node breakdown:")
     for node_id, num_states in states_by_node.items():
         progress_bar = "█" * num_states + "░" * (states_per_node - num_states)
-        print(f"  Node {node_id}: {num_states:3d}/{states_per_node} {progress_bar[:50]}")
+        print(
+            f"  Node {node_id}: {num_states:3d}/{states_per_node} {progress_bar[:50]}"
+        )
 
     # Assertions: We should get at least some states for each node
     assert min_states > 0, f"Node with 0 states found (min={min_states})"
 
     # We should achieve at least 20% of requested states on average
     # (this is a loose bound to catch catastrophic failures)
-    assert avg_states >= states_per_node * 0.2, \
-        f"Collection too inefficient: {avg_states:.1f}/{states_per_node} = {avg_states/states_per_node*100:.1f}%"
+    assert (
+        avg_states >= states_per_node * 0.2
+    ), f"Collection too inefficient: {avg_states:.1f}/{states_per_node} = {avg_states/states_per_node*100:.1f}%"
 
 
 @pytest.mark.parametrize("system_cls", [BaseObstacle2DTAMPSystem])

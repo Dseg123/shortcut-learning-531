@@ -82,7 +82,8 @@ class MultiRLPolicyV2(Policy[ObsType, ActType]):
         pass
 
     def configure_context(self, context: PolicyContext) -> None:
-        """Configure policy with context information (used during execution)."""
+        """Configure policy with context information (used during
+        execution)."""
         self._current_context = context
 
         # Get source and target node IDs from context
@@ -117,7 +118,9 @@ class MultiRLPolicyV2(Policy[ObsType, ActType]):
             raise ValueError("No active shortcut for current context")
 
         if self._active_shortcut_id not in self.policies:
-            raise ValueError(f"No trained policy for shortcut {self._active_shortcut_id}")
+            raise ValueError(
+                f"No trained policy for shortcut {self._active_shortcut_id}"
+            )
 
         return self.policies[self._active_shortcut_id].get_action(obs)
 
@@ -173,7 +176,9 @@ class MultiRLPolicyV2(Policy[ObsType, ActType]):
 
             # Create policy if it doesn't exist
             if shortcut_id not in self.policies:
-                self.policies[shortcut_id] = RLPolicy(self._seed + shortcut_id, self.config)
+                self.policies[shortcut_id] = RLPolicy(
+                    self._seed + shortcut_id, self.config
+                )
 
             # Store for parallel training
             policies_to_train[shortcut_id] = (
@@ -184,10 +189,7 @@ class MultiRLPolicyV2(Policy[ObsType, ActType]):
             )
 
         # Decide whether to train in parallel or sequentially
-        if (
-            len(policies_to_train) > 1
-            and torch.cuda.is_available()
-        ):
+        if len(policies_to_train) > 1 and torch.cuda.is_available():
             num_gpus = torch.cuda.device_count()
             print(f"\nUsing parallel training with {num_gpus} GPU(s)")
             self._train_parallel(policies_to_train, save_dir)
@@ -199,14 +201,14 @@ class MultiRLPolicyV2(Policy[ObsType, ActType]):
 
     def _extract_perceiver(self, env: gym.Env):
         """Extract perceiver from environment by unwrapping."""
-        if hasattr(env, 'perceiver'):
+        if hasattr(env, "perceiver"):
             return env.perceiver
 
         # Try to unwrap to find perceiver
         current_env = env
-        while hasattr(current_env, 'env'):
+        while hasattr(current_env, "env"):
             current_env = current_env.env
-            if hasattr(current_env, 'perceiver'):
+            if hasattr(current_env, "perceiver"):
                 return current_env.perceiver
 
         raise ValueError("Could not find perceiver in environment")
@@ -214,13 +216,18 @@ class MultiRLPolicyV2(Policy[ObsType, ActType]):
     def _get_base_env(self, env: gym.Env) -> gym.Env:
         """Unwrap environment to get base env."""
         base_env = env
-        while hasattr(base_env, 'env'):
+        while hasattr(base_env, "env"):
             base_env = base_env.env
         return base_env
 
     def _train_sequential(self, policies_to_train: dict) -> None:
         """Train policies sequentially (one at a time)."""
-        for shortcut_id, (policy, wrapped_env, single_shortcut_data, train_config) in policies_to_train.items():
+        for shortcut_id, (
+            policy,
+            wrapped_env,
+            single_shortcut_data,
+            train_config,
+        ) in policies_to_train.items():
             source_node, target_node = single_shortcut_data.shortcuts[0]
             print(f"\n--- Training policy for shortcut {shortcut_id} ---")
             print(f"  Source: node {source_node.id} ({len(source_node.states)} states)")
@@ -241,7 +248,9 @@ class MultiRLPolicyV2(Policy[ObsType, ActType]):
                 callback=callback,
             )
 
-    def _train_parallel(self, policies_to_train: dict, save_dir: str | None = None) -> None:
+    def _train_parallel(
+        self, policies_to_train: dict, save_dir: str | None = None
+    ) -> None:
         """Train policies in parallel across multiple GPUs."""
         # Use GPU parallel trainer
         trainer = GPUParallelTrainer(use_cuda=True)
@@ -253,9 +262,7 @@ class MultiRLPolicyV2(Policy[ObsType, ActType]):
 
         # Train all policies in parallel
         results = trainer.train_policies(
-            policies_to_train,
-            train_single_policy_v2,
-            **train_kwargs
+            policies_to_train, train_single_policy_v2, **train_kwargs
         )
 
         # Handle results (e.g., saved model paths)
@@ -269,6 +276,7 @@ class MultiRLPolicyV2(Policy[ObsType, ActType]):
     def save(self, path: str) -> None:
         """Save all policies."""
         import os
+
         os.makedirs(path, exist_ok=True)
 
         for shortcut_id, policy in self.policies.items():
@@ -277,8 +285,9 @@ class MultiRLPolicyV2(Policy[ObsType, ActType]):
 
         # Save mapping
         import pickle
+
         mapping_path = os.path.join(path, "node_pair_mapping.pkl")
-        with open(mapping_path, 'wb') as f:
+        with open(mapping_path, "wb") as f:
             pickle.dump(self._node_pair_to_shortcut, f)
 
     def load(self, path: str) -> None:
@@ -288,12 +297,14 @@ class MultiRLPolicyV2(Policy[ObsType, ActType]):
 
         # Load mapping
         mapping_path = os.path.join(path, "node_pair_mapping.pkl")
-        with open(mapping_path, 'rb') as f:
+        with open(mapping_path, "rb") as f:
             self._node_pair_to_shortcut = pickle.load(f)
 
         # Load policies
         for shortcut_id in set(self._node_pair_to_shortcut.values()):
             policy_path = os.path.join(path, f"policy_{shortcut_id}.zip")
             if os.path.exists(policy_path):
-                self.policies[shortcut_id] = RLPolicy(self._seed + shortcut_id, self.config)
+                self.policies[shortcut_id] = RLPolicy(
+                    self._seed + shortcut_id, self.config
+                )
                 self.policies[shortcut_id].load(policy_path)

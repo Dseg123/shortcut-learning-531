@@ -11,10 +11,10 @@ from shortcut_learning.problems.obstacle2d.system import BaseObstacle2DTAMPSyste
 system = BaseObstacle2DTAMPSystem.create_default(seed=42)
 
 approach_config = ApproachConfig(
-    approach_type='slap_v2', approach_name='example', debug_videos=False, seed=42
+    approach_type="slap_v2", approach_name="example", debug_videos=False, seed=42
 )
 
-policy_config = PolicyConfig(policy_type='multi_rl_ppo_v2')
+policy_config = PolicyConfig(policy_type="multi_rl_ppo_v2")
 
 collect_config = CollectionConfig()
 train_config = TrainingConfig(runs_per_shortcut=1, max_env_steps=2)
@@ -29,4 +29,4 @@ metrics = pipeline_from_configs(
     eval_config,
 )
 
-print('SUCCESS:', metrics)
+print("SUCCESS:", metrics)

@@ -49,9 +49,13 @@ def collect_diverse_states_per_node(
         use_multi_start: If True, use multi-start strategy for even coverage (default)
     """
     if use_multi_start:
-        _collect_diverse_states_multi_start(approach, states_per_node, perturbation_steps)
+        _collect_diverse_states_multi_start(
+            approach, states_per_node, perturbation_steps
+        )
     else:
-        _collect_diverse_states_single_start(approach, states_per_node, perturbation_steps)
+        _collect_diverse_states_single_start(
+            approach, states_per_node, perturbation_steps
+        )
 
 
 def _collect_diverse_states_multi_start(
@@ -103,7 +107,9 @@ def _collect_diverse_states_multi_start(
                 # Collecting state at the start node itself
                 path_to_target = []
             else:
-                path_to_target = _find_regular_path(planning_graph, start_node, target_node)
+                path_to_target = _find_regular_path(
+                    planning_graph, start_node, target_node
+                )
                 if not path_to_target:
                     continue  # Can't reach this target from this start
 
@@ -127,8 +133,10 @@ def _collect_diverse_states_multi_start(
                 # Navigate from start_node to target_node
                 if path_to_target:
                     final_obs, success = _execute_path(
-                        approach, obs, path_to_target,
-                        perturbation_steps if attempt > 0 else 0
+                        approach,
+                        obs,
+                        path_to_target,
+                        perturbation_steps if attempt > 0 else 0,
                     )
                     if not success:
                         continue
@@ -144,7 +152,9 @@ def _collect_diverse_states_multi_start(
 
     # Print summary
     total_states = sum(len(node.states) for node in planning_graph.nodes)
-    print(f"\nTotal states collected: {total_states} across {len(planning_graph.nodes)} nodes")
+    print(
+        f"\nTotal states collected: {total_states} across {len(planning_graph.nodes)} nodes"
+    )
     for node in planning_graph.nodes:
         print(f"  Node {node.id}: {len(node.states)} states")
 
@@ -218,7 +228,9 @@ def _collect_diverse_states_single_start(
 
             # Reset to a new random initial state and execute path
             obs, info = system.reset()
-            final_obs, success = _execute_path(approach, obs, path, perturbation_steps if attempt > 0 else 0)
+            final_obs, success = _execute_path(
+                approach, obs, path, perturbation_steps if attempt > 0 else 0
+            )
 
             if success:
                 # Get current atoms
@@ -235,7 +247,9 @@ def _collect_diverse_states_single_start(
 
     # Print summary
     total_states = sum(len(node.states) for node in planning_graph.nodes)
-    print(f"\nTotal states collected: {total_states} across {len(planning_graph.nodes)} nodes")
+    print(
+        f"\nTotal states collected: {total_states} across {len(planning_graph.nodes)} nodes"
+    )
 
 
 def _find_regular_path(
@@ -357,7 +371,8 @@ def _select_promising_shortcuts_with_rollouts(
     action_scale: float = 1.0,
     random_seed: int = 42,
 ) -> list[tuple[PlanningGraphNode, PlanningGraphNode]]:
-    """Identify promising shortcuts by performing random rollouts from each node.
+    """Identify promising shortcuts by performing random rollouts from each
+    node.
 
     This function runs random rollouts from each source node in the planning graph
     and tracks which nodes' atoms are reached during exploration. Shortcuts that
@@ -376,8 +391,9 @@ def _select_promising_shortcuts_with_rollouts(
     Returns:
         List of (source_node, target_node) tuples for promising shortcuts
     """
-    import gymnasium as gym
     from collections import defaultdict
+
+    import gymnasium as gym
 
     print("\n=== Identifying Promising Shortcuts with Random Rollouts ===")
     shortcut_success_counts: defaultdict[tuple[int, int], int] = defaultdict(int)
@@ -430,7 +446,9 @@ def _select_promising_shortcuts_with_rollouts(
                         # Check if there's already a direct regular edge
                         has_direct_edge = any(
                             edge.target == target_node and not edge.is_shortcut
-                            for edge in planning_graph.node_to_outgoing_edges.get(source_node, [])
+                            for edge in planning_graph.node_to_outgoing_edges.get(
+                                source_node, []
+                            )
                         )
                         if has_direct_edge:
                             continue
@@ -442,7 +460,9 @@ def _select_promising_shortcuts_with_rollouts(
                             and target_node.id not in reached_in_this_rollout
                         ):
                             reached_nodes[target_node.id] += 1
-                            shortcut_success_counts[(source_node.id, target_node.id)] += 1
+                            shortcut_success_counts[
+                                (source_node.id, target_node.id)
+                            ] += 1
                             reached_in_this_rollout.add(target_node.id)
 
                     if terminated or truncated:
@@ -551,7 +571,9 @@ def select_shortcut_pairs(
                 # Check if there's already a direct regular edge
                 has_direct_edge = any(
                     edge.target == target_node and not edge.is_shortcut
-                    for edge in planning_graph.node_to_outgoing_edges.get(source_node, [])
+                    for edge in planning_graph.node_to_outgoing_edges.get(
+                        source_node, []
+                    )
                 )
                 if has_direct_edge:
                     continue
@@ -598,13 +620,15 @@ def generate_training_data(
     # Store shortcut metadata
     shortcut_info = []
     for shortcut_idx, (source_node, target_node) in enumerate(shortcut_pairs):
-        shortcut_info.append({
-            "shortcut_id": shortcut_idx,
-            "source_node_id": source_node.id,
-            "target_node_id": target_node.id,
-            "num_source_states": len(source_node.states),
-            "num_target_states": len(target_node.states),
-        })
+        shortcut_info.append(
+            {
+                "shortcut_id": shortcut_idx,
+                "source_node_id": source_node.id,
+                "target_node_id": target_node.id,
+                "num_source_states": len(source_node.states),
+                "num_target_states": len(target_node.states),
+            }
+        )
 
     return ShortcutTrainingData(
         shortcuts=shortcut_pairs,
@@ -633,11 +657,13 @@ def collect_training_data_v2(
     Returns:
         ShortcutTrainingData containing the k shortcut pairs
     """
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("V2 COLLECTION PIPELINE")
-    print("="*60)
+    print("=" * 60)
 
-    assert approach.planning_graph is not None, "Must call approach.reset() first to build planning graph"
+    assert (
+        approach.planning_graph is not None
+    ), "Must call approach.reset() first to build planning graph"
 
     rng = np.random.default_rng(config.seed)
 
@@ -664,8 +690,10 @@ def collect_training_data_v2(
     # Step 3: Generate training data
     training_data = generate_training_data(shortcut_pairs)
 
-    print("\n" + "="*60)
-    print(f"COLLECTION COMPLETE: {training_data.num_training_examples()} examples for {len(training_data)} shortcuts")
-    print("="*60 + "\n")
+    print("\n" + "=" * 60)
+    print(
+        f"COLLECTION COMPLETE: {training_data.num_training_examples()} examples for {len(training_data)} shortcuts"
+    )
+    print("=" * 60 + "\n")
 
     return training_data

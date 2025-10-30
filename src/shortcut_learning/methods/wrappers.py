@@ -718,7 +718,9 @@ class SLAPWrapperV2(gym.Env):
 
         # Print shortcuts
         for idx, (source, target) in enumerate(self.shortcuts):
-            print(f"  Shortcut {idx}: node {source.id} -> {target.id} ({len(source.states)} states)")
+            print(
+                f"  Shortcut {idx}: node {source.id} -> {target.id} ({len(source.states)} states)"
+            )
 
         self.max_episode_steps = training_data.config.get(
             "max_training_steps_per_shortcut", self.max_episode_steps
@@ -770,9 +772,7 @@ class SLAPWrapperV2(gym.Env):
         # Process observation if needed for the policy
         if self.relevant_objects is not None:
             assert hasattr(self.env, "extract_relevant_object_features")
-            obs = self.env.extract_relevant_object_features(
-                obs, self.relevant_objects
-            )
+            obs = self.env.extract_relevant_object_features(obs, self.relevant_objects)
 
         # Advance indices for next reset
         self.current_state_idx += 1
