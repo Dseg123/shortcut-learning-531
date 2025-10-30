@@ -15,10 +15,10 @@ module load python/3.8  # Adjust to your Python version
 module load cuda/11.3  # Adjust to your CUDA version
 
 # Activate your virtual environment
-source /home/de7281/thesis/shortcut-learning/.venv/bin/activate  # Adjust to your virtual environment path
+source /home/sl5183/thesis/shortcut-learning/.venv/bin/activate  # Adjust to your virtual environment path
 
 # Navigate to the experiment directory
-cd /home/de7281/thesis/shortcut-learning/experiments
+cd /home/sl5183/thesis/shortcut-learning/experiments
 
 # Run the SLAP V2 experiment with Hydra
 # Override defaults to use slap_v2 approach with multi_rl_ppo_v2 policy
