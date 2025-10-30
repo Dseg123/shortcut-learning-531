@@ -14,15 +14,15 @@ import torch
 from torch import nn, optim
 
 from shortcut_learning.methods.graph_utils import PlanningGraphNode
-
+from shortcut_learning.methods.wrappers import SLAPWrapperV2
 
 class GoalConditionedWrapper(gym.Wrapper):
     """Wrapper to make any gym environment goal-conditioned with -1 step
     reward."""
 
-    def __init__(self, env, planning_graph_goal: PlanningGraphNode):
+    def __init__(self, env: SLAPWrapperV2):
         super().__init__(env)
-        self.goal = planning_graph_goal
+        self.goal = 
 
         # Modify observation space to include goal
         self.observation_space = gym.spaces.Box(
