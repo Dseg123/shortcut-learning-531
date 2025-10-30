@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from abc import ABC, abstractmethod
+from abc import abstractmethod
 
 from shortcut_learning.methods.graph_utils import PlanningGraphNode
 from shortcut_learning.methods.heuristic_models.base_model import HeuristicModel
@@ -14,6 +14,7 @@ class MLPModel(HeuristicModel):
     def __init__(self, hyper_params) -> None:
         """Initialize policy with environment."""
         self._hyper_params = hyper_params
+        super().__init__(hyper_params)
 
     @abstractmethod
     def get_distance(
