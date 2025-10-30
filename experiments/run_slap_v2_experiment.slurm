@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH --job-name=slap_v2_experiment  # Job name
 #SBATCH --time=8:00:00  # Maximum runtime (hh:mm:ss) - longer for training
-# #SBATCH --partition=pli
+#SBATCH --partition=pli
 #SBATCH --nodes=1  # Number of nodes
 #SBATCH --ntasks=1  # Number of tasks
 #SBATCH --cpus-per-task=8  # More CPU cores for parallel training
