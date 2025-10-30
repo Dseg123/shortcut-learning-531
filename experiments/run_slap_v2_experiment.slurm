@@ -1,6 +1,6 @@
 #!/bin/bash
 #SBATCH --job-name=slap_v2_experiment  # Job name
-#SBATCH --time=8:00:00  # Maximum runtime (hh:mm:ss) - longer for training
+#SBATCH --time=4:00:00  # Maximum runtime (hh:mm:ss) - longer for training
 #SBATCH --partition=pli
 #SBATCH --nodes=1  # Number of nodes
 #SBATCH --ntasks=1  # Number of tasks
@@ -38,7 +38,7 @@ python run_single_experiment.py \
     policy.policy_type=multi_rl_ppo_v2 \
     system=obstacle2d \
     collection.states_per_node=100 \
-    training.runs_per_shortcut=1000 \
+    training.runs_per_shortcut=200 \
     training.max_env_steps=50 \
     training.training_record_interval=10 \
     evaluation.num_episodes=100
