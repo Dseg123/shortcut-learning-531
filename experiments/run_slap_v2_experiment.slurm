@@ -11,10 +11,9 @@
 
 
 BASE_PATH=${1:-/home/jz4267/shortcut-learning-531}
-OUTPUT_PATH=${2:-/scratch/gpfs/jz4267/}
 
-#SBATCH --output=${OUTPUT_PATH}/slap_v2_experiment_%j.out  # Output file with job ID
-#SBATCH --error=${OUTPUT_PATH}/slap_v2_experiment_%j.err  # Error file with job ID
+#SBATCH --output=/scratch/gpfs/jz4267/logs/slap_v2_experiment_%j.out  # Output file with job ID
+#SBATCH --error=/scratch/gpfs/jz4267/logs/slap_v2_experiment_%j.err  # Error file with job ID
 
 # Load necessary modules
 module load intel-mkl/2024.2  # Load Intel MKL for numpy
